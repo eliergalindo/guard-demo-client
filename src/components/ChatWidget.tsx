@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, MessageCircle, Minimize2 } from 'lucide-react';
 import { ChatMessage, LakeraResult, AppConfig, DemoPromptSuggestion } from '../types';
 import { apiService } from '../services/api';
+import GraphTrace from './GraphTrace';
 
 interface ChatWidgetProps {
   onLakeraToggle?: (enabled: boolean) => void;
@@ -129,6 +130,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
         timestamp: new Date(),
         tool_traces: response.tool_traces,
         lakera: response.lakera,
+        graph_trace: response.graph_trace,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -253,6 +255,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
                         <div className="mt-2 text-xs text-gray-500">
                           <p>Tools used: {message.tool_traces.length}</p>
                         </div>
+                      )}
+                      {message.graph_trace && message.graph_trace.length > 0 && (
+                        <GraphTrace trace={message.graph_trace} />
                       )}
                     </div>
                     {message.role === 'user' && (

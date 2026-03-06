@@ -539,7 +539,8 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         response=result.response,
         lakera=result.lakera_status,
         tool_traces=result.tool_traces,
-        citations=result.citations
+        citations=result.citations,
+        graph_trace=result.graph_trace,
     )
 
 # RAG endpoints

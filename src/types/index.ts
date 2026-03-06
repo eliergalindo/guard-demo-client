@@ -45,11 +45,20 @@ export interface ChatRequest {
   prompt_id?: number;
 }
 
+export interface GraphTraceEntry {
+  node: string;
+  status: string;
+  timestamp?: number;
+  detail?: string;
+  lakera_flagged?: boolean;
+}
+
 export interface ChatResponse {
   response: string;
   lakera?: any;
   tool_traces?: any[];
   citations?: any[];
+  graph_trace?: GraphTraceEntry[];
 }
 
 // RAG types
@@ -118,6 +127,7 @@ export interface ChatMessage {
   timestamp: Date;
   tool_traces?: any[];
   lakera?: any;
+  graph_trace?: GraphTraceEntry[];
 }
 
 // Demo Prompt types

@@ -43,6 +43,7 @@ class ChatResponse(BaseModel):
     lakera: Optional[Dict[str, Any]] = None
     tool_traces: Optional[List[Dict[str, Any]]] = None
     citations: Optional[List[Dict[str, Any]]] = None
+    graph_trace: Optional[List[Dict[str, Any]]] = None
 
 # RAG schemas
 class RagGenerateRequest(BaseModel):
