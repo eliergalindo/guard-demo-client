@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, MessageCircle, Minimize2 } from 'lucide-react';
-import { ChatMessage, LakeraResult, AppConfig, DemoPromptSuggestion } from '../types';
+import { ChatMessage, LakeraResult, AppConfig, DemoPromptSuggestion, SessionData } from '../types';
 import { apiService } from '../services/api';
 import GraphTrace from './GraphTrace';
 
@@ -10,6 +10,8 @@ interface ChatWidgetProps {
   onExpandedChange?: (expanded: boolean) => void;
   config?: AppConfig | null;
 }
+
+const SESSION_ID_KEY = 'guard_demo_session_id';
 
 const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, onExpandedChange, config }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -21,6 +23,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
   const [currentSuggestion, setCurrentSuggestion] = useState<DemoPromptSuggestion | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [promptIdForNextSend, setPromptIdForNextSend] = useState<number | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem(SESSION_ID_KEY));
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -55,6 +58,39 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
       }
     };
     initializeLakeraResult();
+  }, []);
+
+  // Reload last session on mount
+  useEffect(() => {
+    const reloadLastSession = async () => {
+      try {
+        let session: SessionData;
+        const storedId = localStorage.getItem(SESSION_ID_KEY);
+        if (storedId) {
+          session = await apiService.getSession(storedId);
+        } else {
+          session = await apiService.getLastSession();
+        }
+
+        if (session && session.messages.length > 0) {
+          const restored: ChatMessage[] = session.messages.map((msg) => ({
+            id: msg.id,
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            tool_traces: msg.tool_traces,
+            lakera: msg.lakera,
+            graph_trace: msg.graph_trace,
+          }));
+          setMessages(restored);
+          setSessionId(session.session_id);
+          localStorage.setItem(SESSION_ID_KEY, session.session_id);
+        }
+      } catch (error) {
+        // No previous session to restore — that's fine
+      }
+    };
+    reloadLastSession();
   }, []);
 
   const hasLakeraViolations = () => {
@@ -120,8 +156,15 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ onLakeraToggle, forceExpanded, 
     try {
       const response = await apiService.sendMessage({
         message: inputMessage,
+        ...(sessionId ? { session_id: sessionId } : {}),
         ...(promptIdForNextSend != null ? { prompt_id: promptIdForNextSend } : {}),
       });
+
+      // Persist session_id from response
+      if (response.session_id) {
+        setSessionId(response.session_id);
+        localStorage.setItem(SESSION_ID_KEY, response.session_id);
+      }
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),

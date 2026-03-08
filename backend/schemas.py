@@ -40,10 +40,26 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    session_id: Optional[str] = None
     lakera: Optional[Dict[str, Any]] = None
     tool_traces: Optional[List[Dict[str, Any]]] = None
     citations: Optional[List[Dict[str, Any]]] = None
     graph_trace: Optional[List[Dict[str, Any]]] = None
+
+class SessionMessageResponse(BaseModel):
+    id: str
+    role: str
+    content: str
+    timestamp: str
+    tool_traces: Optional[List[Dict[str, Any]]] = None
+    lakera: Optional[Dict[str, Any]] = None
+    graph_trace: Optional[List[Dict[str, Any]]] = None
+
+class SessionResponse(BaseModel):
+    session_id: str
+    messages: List[SessionMessageResponse]
+    created_at: str
+    updated_at: str
 
 # RAG schemas
 class RagGenerateRequest(BaseModel):

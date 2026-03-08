@@ -55,10 +55,28 @@ export interface GraphTraceEntry {
 
 export interface ChatResponse {
   response: string;
+  session_id?: string;
   lakera?: any;
   tool_traces?: any[];
   citations?: any[];
   graph_trace?: GraphTraceEntry[];
+}
+
+export interface SessionMessage {
+  id: string;
+  role: string;
+  content: string;
+  timestamp: string;
+  tool_traces?: any[];
+  lakera?: any;
+  graph_trace?: GraphTraceEntry[];
+}
+
+export interface SessionData {
+  session_id: string;
+  messages: SessionMessage[];
+  created_at: string;
+  updated_at: string;
 }
 
 // RAG types

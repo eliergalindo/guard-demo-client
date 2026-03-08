@@ -1,7 +1,7 @@
-import { 
-  AppConfig, 
-  AppConfigUpdate, 
-  ChatRequest, 
+import {
+  AppConfig,
+  AppConfigUpdate,
+  ChatRequest,
   ChatResponse,
   RagGenerateRequest,
   RagGenerateResponse,
@@ -12,7 +12,8 @@ import {
   DemoPrompt,
   DemoPromptCreate,
   DemoPromptUpdate,
-  DemoPromptSearchResponse
+  DemoPromptSearchResponse,
+  SessionData
 } from '../types';
 
 const API_BASE = '/api';
@@ -82,6 +83,15 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(request),
     });
+  }
+
+  // Session endpoints
+  async getLastSession(): Promise<SessionData> {
+    return this.request<SessionData>('/sessions/last');
+  }
+
+  async getSession(sessionId: string): Promise<SessionData> {
+    return this.request<SessionData>(`/sessions/${sessionId}`);
   }
 
   // RAG endpoints

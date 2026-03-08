@@ -10,6 +10,7 @@ import zipfile
 import io
 import logging
 import sys
+import uuid
 from datetime import datetime
 
 # Configure logging to prevent blocking I/O issues
@@ -23,13 +24,14 @@ logging.basicConfig(
 
 from sqlalchemy import text
 from .database import get_db, engine
-from .models import Base, AppConfig, Tool, RagSource, MCPToolCapabilities, DemoPrompt
+from .models import Base, AppConfig, Tool, RagSource, MCPToolCapabilities, DemoPrompt, ChatSession, ChatMessageRecord
 from .schemas import (
     AppConfigResponse, AppConfigUpdate,
     ChatRequest, ChatResponse,
     RagGenerateRequest, RagGenerateResponse, RagSearchResponse,
     ToolResponse, ToolCreate, ToolUpdate,
-    DemoPromptResponse, DemoPromptCreate, DemoPromptUpdate, DemoPromptSearchRequest
+    DemoPromptResponse, DemoPromptCreate, DemoPromptUpdate, DemoPromptSearchRequest,
+    SessionResponse, SessionMessageResponse
 )
 from .agent import run_agent, AgentRequest
 from . import lakera, rag
@@ -525,22 +527,113 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
             if demo_prompt.preferred_llm in valid_models:
                 config.openai_model = demo_prompt.preferred_llm
                 db.commit()
-    
+
+    # Resolve or create session
+    session_id = request.session_id or str(uuid.uuid4())
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    if not session:
+        session = ChatSession(session_id=session_id)
+        db.add(session)
+        db.commit()
+
     # Create agent request
     agent_request = AgentRequest(
         message=request.message,
-        session_id=request.session_id
+        session_id=session_id
     )
-    
+
     # Run agent
     result = await run_agent(agent_request, config, db)
-    
+
+    # Persist user message
+    user_msg = ChatMessageRecord(
+        session_id=session_id,
+        role="user",
+        content=request.message,
+    )
+    db.add(user_msg)
+
+    # Persist assistant message
+    assistant_msg = ChatMessageRecord(
+        session_id=session_id,
+        role="assistant",
+        content=result.response,
+        tool_traces=result.tool_traces,
+        lakera=result.lakera_status,
+        graph_trace=result.graph_trace,
+    )
+    db.add(assistant_msg)
+
+    # Update session timestamp
+    session.updated_at = datetime.utcnow()
+    db.commit()
+
     return ChatResponse(
         response=result.response,
+        session_id=session_id,
         lakera=result.lakera_status,
         tool_traces=result.tool_traces,
         citations=result.citations,
         graph_trace=result.graph_trace,
+    )
+
+# Session endpoints
+@app.get("/api/sessions/last", response_model=SessionResponse)
+async def get_last_session(db: Session = Depends(get_db)):
+    """Retrieve the most recent chat session with all its messages."""
+    session = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="No sessions found")
+
+    messages = db.query(ChatMessageRecord).filter(
+        ChatMessageRecord.session_id == session.session_id
+    ).order_by(ChatMessageRecord.id.asc()).all()
+
+    return SessionResponse(
+        session_id=session.session_id,
+        messages=[
+            SessionMessageResponse(
+                id=str(msg.id),
+                role=msg.role,
+                content=msg.content,
+                timestamp=msg.created_at.isoformat() if msg.created_at else "",
+                tool_traces=msg.tool_traces,
+                lakera=msg.lakera,
+                graph_trace=msg.graph_trace,
+            )
+            for msg in messages
+        ],
+        created_at=session.created_at.isoformat() if session.created_at else "",
+        updated_at=session.updated_at.isoformat() if session.updated_at else "",
+    )
+
+@app.get("/api/sessions/{session_id}", response_model=SessionResponse)
+async def get_session(session_id: str, db: Session = Depends(get_db)):
+    """Retrieve a specific chat session by ID."""
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    messages = db.query(ChatMessageRecord).filter(
+        ChatMessageRecord.session_id == session_id
+    ).order_by(ChatMessageRecord.id.asc()).all()
+
+    return SessionResponse(
+        session_id=session.session_id,
+        messages=[
+            SessionMessageResponse(
+                id=str(msg.id),
+                role=msg.role,
+                content=msg.content,
+                timestamp=msg.created_at.isoformat() if msg.created_at else "",
+                tool_traces=msg.tool_traces,
+                lakera=msg.lakera,
+                graph_trace=msg.graph_trace,
+            )
+            for msg in messages
+        ],
+        created_at=session.created_at.isoformat() if session.created_at else "",
+        updated_at=session.updated_at.isoformat() if session.updated_at else "",
     )
 
 # RAG endpoints

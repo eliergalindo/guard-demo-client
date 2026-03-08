@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -62,6 +62,26 @@ class MCPToolCapabilities(Base):
     last_discovered = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ChatMessageRecord(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, ForeignKey("chat_sessions.session_id"), index=True)
+    role = Column(String)  # "user" or "assistant"
+    content = Column(Text)
+    tool_traces = Column(JSON, nullable=True)
+    lakera = Column(JSON, nullable=True)
+    graph_trace = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class DemoPrompt(Base):
     __tablename__ = "demo_prompts"
