@@ -15,6 +15,7 @@ async def run_general_agent(
     system_prompt: Optional[str],
     model: str = "gpt-4o",
     temperature: float = 0.7,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
     Handle general conversation with RAG context if available.
@@ -41,6 +42,8 @@ async def run_general_agent(
     if context:
         context_text = "\n\n".join([doc["text"] for doc in context])
         messages.append({"role": "system", "content": f"Context information:\n{context_text}"})
+    if conversation_history:
+        messages.extend(conversation_history)
     messages.append({"role": "user", "content": message})
 
     try:

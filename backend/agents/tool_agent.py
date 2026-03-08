@@ -23,6 +23,7 @@ async def run_tool_agent(
     lakera_api_key: Optional[str] = None,
     lakera_project_id: Optional[str] = None,
     lakera_blocking_mode: bool = False,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
     Execute tool calls via OpenAI function calling + MCP.
@@ -55,6 +56,8 @@ async def run_tool_agent(
     if context:
         context_text = "\n\n".join([doc["text"] for doc in context])
         messages.append({"role": "system", "content": f"Context information:\n{context_text}"})
+    if conversation_history:
+        messages.extend(conversation_history)
     messages.append({"role": "user", "content": message})
 
     tool_traces: List[Dict[str, Any]] = []

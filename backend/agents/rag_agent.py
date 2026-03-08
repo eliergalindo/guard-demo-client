@@ -18,6 +18,7 @@ async def run_rag_agent(
     system_prompt: Optional[str],
     model: str = "gpt-4o",
     temperature: float = 0.7,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
     Retrieve context from RAG and generate an answer.
@@ -52,6 +53,8 @@ async def run_rag_agent(
             "content": f"Context information:\n{context_text}",
         })
 
+    if conversation_history:
+        messages.extend(conversation_history)
     messages.append({"role": "user", "content": message})
 
     # Step 3: Call LLM

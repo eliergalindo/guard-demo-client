@@ -46,6 +46,7 @@ class GraphState(TypedDict, total=False):
     # --- Inputs (set once at start) ---
     message: str
     session_id: Optional[str]
+    conversation_history: List[Dict[str, str]]  # previous messages for multi-turn context
     system_prompt: Optional[str]
     model: str
     temperature: float
@@ -150,6 +151,7 @@ async def rag_agent_node(state: dict) -> dict:
         system_prompt=state.get("system_prompt"),
         model=state.get("model", "gpt-4o"),
         temperature=state.get("temperature", 0.7),
+        conversation_history=state.get("conversation_history", []),
     )
     return {
         "agent_response": result["response"],
@@ -173,6 +175,7 @@ async def tool_agent_node(state: dict) -> dict:
         lakera_api_key=state.get("lakera_api_key"),
         lakera_project_id=state.get("lakera_project_id"),
         lakera_blocking_mode=state.get("lakera_blocking_mode", False),
+        conversation_history=state.get("conversation_history", []),
     )
     return {
         "agent_response": result["response"],
@@ -192,6 +195,7 @@ async def pii_agent_node(state: dict) -> dict:
         system_prompt=state.get("system_prompt"),
         model=state.get("model", "gpt-4o"),
         temperature=state.get("temperature", 0.7),
+        conversation_history=state.get("conversation_history", []),
     )
     return {
         "agent_response": result["response"],
@@ -208,6 +212,7 @@ async def general_agent_node(state: dict) -> dict:
         system_prompt=state.get("system_prompt"),
         model=state.get("model", "gpt-4o"),
         temperature=state.get("temperature", 0.7),
+        conversation_history=state.get("conversation_history", []),
     )
     return {
         "agent_response": result["response"],

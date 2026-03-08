@@ -7,7 +7,7 @@ Each node demonstrates a different Lakera Guard security protection.
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
-from .models import AppConfig
+from .models import AppConfig, ChatMessageRecord
 from .graph import agent_graph
 
 
@@ -38,9 +38,24 @@ async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResu
     lakera_project_id = cfg.lakera_project_id if cfg.lakera_enabled else None
     lakera_blocking_mode = cfg.lakera_blocking_mode if cfg.lakera_enabled else False
 
+    # Load conversation history from DB for multi-turn context
+    conversation_history: List[Dict[str, str]] = []
+    if req.session_id:
+        past_messages = (
+            db.query(ChatMessageRecord)
+            .filter(ChatMessageRecord.session_id == req.session_id)
+            .order_by(ChatMessageRecord.id.asc())
+            .all()
+        )
+        conversation_history = [
+            {"role": msg.role, "content": msg.content}
+            for msg in past_messages
+        ]
+
     initial_state = {
         "message": req.message,
         "session_id": req.session_id,
+        "conversation_history": conversation_history,
         "system_prompt": cfg.system_prompt,
         "model": cfg.openai_model or "gpt-4o",
         "temperature": cfg.temperature,
