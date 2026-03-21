@@ -16,6 +16,9 @@ export interface AppConfig {
   system_prompt?: string;
   openai_api_key?: string;
   lakera_api_key?: string;
+  langsmith_api_key?: string;
+  langsmith_project?: string;
+  langsmith_tracing_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +39,9 @@ export interface AppConfigUpdate {
   openai_api_key?: string;
   lakera_api_key?: string;
   lakera_project_id?: string;
+  langsmith_api_key?: string;
+  langsmith_project?: string;
+  langsmith_tracing_enabled?: boolean;
 }
 
 // Chat types

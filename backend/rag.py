@@ -11,6 +11,7 @@ from .openai_client import openai_client
 from .database import get_db
 from .models import AppConfig, RagSource
 from .lakera import check_interaction
+from . import tracing
 
 # Global variables to store RAG scanning results and progress
 _last_rag_scanning_result: Optional[Dict[str, Any]] = None
@@ -336,6 +337,7 @@ def chunk_by_file_type(content: str, filename: str, mimetype: str) -> List[Tuple
             "chunk_type": "text_generic"
         }) for chunk in chunks]
 
+@tracing.trace(name="rag.retrieve", run_type="retriever", metadata={"service": "chromadb"})
 async def retrieve(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
     """
     Retrieve relevant documents from RAG system
@@ -535,7 +537,7 @@ Constraints: {options.get('constraints', '')}
         response = openai_client.chat_completion(
             messages=messages,
             model=config.openai_model,
-            temperature=float(config.temperature) / 10.0
+            temperature=config.temperature
         )
         
         markdown = response["choices"][0]["message"]["content"]

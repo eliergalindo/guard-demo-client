@@ -50,6 +50,18 @@ def _migrate_demo_prompts_preferred_llm():
 
 _migrate_demo_prompts_preferred_llm()
 
+def _migrate_langsmith_columns():
+    with engine.connect() as conn:
+        r = conn.execute(text("PRAGMA table_info(app_config)"))
+        columns = [row[1] for row in r.fetchall()]
+        if "langsmith_api_key" not in columns:
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN langsmith_api_key VARCHAR"))
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN langsmith_project VARCHAR"))
+            conn.execute(text("ALTER TABLE app_config ADD COLUMN langsmith_tracing_enabled BOOLEAN DEFAULT 0"))
+            conn.commit()
+
+_migrate_langsmith_columns()
+
 app = FastAPI(
     title="Agentic Demo API",
     description="Backend API for the Agentic Demo application",
@@ -103,11 +115,11 @@ async def update_config(config_update: AppConfigUpdate, db: Session = Depends(ge
 # Export sections: which config fields belong to which section (for selective export/import)
 EXPORT_SECTIONS = {
     "appearance": ["business_name", "tagline", "hero_text", "hero_image_url", "logo_url"],
-    "llm": ["openai_model", "temperature", "system_prompt"],
+    "llm": ["openai_model", "temperature", "system_prompt", "langsmith_tracing_enabled"],
     "security": ["lakera_enabled", "lakera_blocking_mode"],
     "rag_scanning": ["rag_content_scanning"],
-    "api_keys": ["openai_api_key", "lakera_api_key"],
-    "project_ids": ["lakera_project_id", "rag_lakera_project_id"],
+    "api_keys": ["openai_api_key", "lakera_api_key", "langsmith_api_key"],
+    "project_ids": ["lakera_project_id", "rag_lakera_project_id", "langsmith_project"],
 }
 SAFE_DEFAULT_INCLUDE = ["appearance", "llm", "security", "rag_scanning", "demo_prompts", "tools", "rag"]
 
@@ -286,6 +298,9 @@ async def import_config(file: UploadFile = File(...), db: Session = Depends(get_
                     lakera_enabled=config_data.get("lakera_enabled", True),
                     lakera_blocking_mode=config_data.get("lakera_blocking_mode", False),
                     rag_content_scanning=config_data.get("rag_content_scanning", False),
+                    langsmith_api_key=config_data.get("langsmith_api_key"),
+                    langsmith_project=config_data.get("langsmith_project"),
+                    langsmith_tracing_enabled=config_data.get("langsmith_tracing_enabled", False),
                 )
                 db.add(new_config)
                 with open(os.path.join(temp_dir, "tools.json"), 'r') as f:

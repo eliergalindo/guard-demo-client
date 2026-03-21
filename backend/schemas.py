@@ -16,6 +16,7 @@ class AppConfigBase(BaseModel):
     openai_model: str = "gpt-4o-mini"
     temperature: int = 7
     system_prompt: Optional[str] = None
+    langsmith_tracing_enabled: bool = False
 
 class AppConfigResponse(AppConfigBase):
     id: int
@@ -23,6 +24,8 @@ class AppConfigResponse(AppConfigBase):
     lakera_api_key: Optional[str] = None
     lakera_project_id: Optional[str] = None
     rag_lakera_project_id: Optional[str] = None
+    langsmith_api_key: Optional[str] = None
+    langsmith_project: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -31,6 +34,8 @@ class AppConfigUpdate(AppConfigBase):
     lakera_api_key: Optional[str] = None
     lakera_project_id: Optional[str] = None
     rag_lakera_project_id: Optional[str] = None
+    langsmith_api_key: Optional[str] = None
+    langsmith_project: Optional[str] = None
 
 # Chat schemas
 class ChatRequest(BaseModel):

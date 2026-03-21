@@ -23,6 +23,9 @@ class AppConfig(Base):
     lakera_blocking_mode = Column(Boolean, default=False)
     rag_content_scanning = Column(Boolean, default=False)
     rag_lakera_project_id = Column(String, nullable=True)
+    langsmith_api_key = Column(String, nullable=True)
+    langsmith_project = Column(String, nullable=True)
+    langsmith_tracing_enabled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

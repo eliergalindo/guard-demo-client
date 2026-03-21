@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from .database import get_db
 from .models import Tool, MCPToolCapabilities, AppConfig
 from . import lakera
+from . import tracing
 
 def _mcp_error_message(result: Dict[str, Any]) -> str:
     """Extract a single error string from MCP result content (may be list of {type, text})."""
@@ -132,6 +133,7 @@ def openai_tools_manifest(db: Session) -> List[Dict[str, Any]]:
     
     return manifest
 
+@tracing.trace(name="toolhive.execute", run_type="tool", metadata={"service": "toolhive"})
 async def execute(tool_name: str, args: Dict[str, Any], tool_metadata: Dict[str, Any], db: Session, lakera_api_key: Optional[str] = None, lakera_project_id: Optional[str] = None, lakera_blocking_mode: bool = True, enable_multi_step: bool = False) -> Dict[str, Any]:
     """
     Execute a specific tool using the metadata provided by OpenAI's tool selection

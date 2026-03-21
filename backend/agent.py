@@ -1,9 +1,11 @@
+import json
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from .openai_client import openai_client
 from .models import AppConfig
 from . import rag, toolhive, lakera
+from . import tracing
 
 class AgentRequest(BaseModel):
     message: str
@@ -18,6 +20,21 @@ class AgentResult(BaseModel):
 async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResult:
     """
     Main orchestrator function that coordinates RAG, tools, and OpenAI
+    """
+    # Configure LangSmith tracing from current config
+    tracing.configure(
+        api_key=cfg.langsmith_api_key,
+        project=cfg.langsmith_project,
+        enabled=cfg.langsmith_tracing_enabled
+    )
+
+    return await _run_agent_traced(req, cfg, db)
+
+
+@tracing.trace(name="agent.run_agent", run_type="chain")
+async def _run_agent_traced(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResult:
+    """
+    Traced orchestrator function that coordinates RAG, tools, and OpenAI
     """
     # Step 0: Check user input with Lakera if enabled (pre-response check)
     lakera_api_key = cfg.lakera_api_key if cfg.lakera_enabled else None
@@ -117,7 +134,6 @@ async def run_agent(req: AgentRequest, cfg: AppConfig, db: Session) -> AgentResu
                 print(f"🔧 Executing tool: {tool_name} with args: {tool_args}")
                 
                 # Parse arguments
-                import json
                 try:
                     parsed_args = json.loads(tool_args)
                 except json.JSONDecodeError:

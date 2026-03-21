@@ -22,6 +22,7 @@ const AdminConsole: React.FC = () => {
   const [showOpenAIKey, setShowOpenAIKey] = useState(false);
   const [showLakeraKey, setShowLakeraKey] = useState(false);
   const [showMCPInstructions, setShowMCPInstructions] = useState(false);
+  const [showLangSmithKey, setShowLangSmithKey] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [ragScanningNotificationCount, setRagScanningNotificationCount] = useState<number>(0);
   const [ragScanningProgress, setRagScanningProgress] = useState<{isScanning: boolean; current: number; total: number; filename?: string} | null>(null);
@@ -684,6 +685,79 @@ const AdminConsole: React.FC = () => {
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
+                </div>
+              </div>
+
+              {/* LangSmith Observability Section */}
+              <div className="border-t pt-6 mt-6">
+                <h3 className="text-md font-semibold text-gray-900 mb-4">LangSmith Observability</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Enable LangSmith tracing to monitor LLM calls, RAG retrieval, tool executions, and Lakera Guard checks in real time.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => handleConfigUpdate({ langsmith_tracing_enabled: !config.langsmith_tracing_enabled })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                        config.langsmith_tracing_enabled ? 'bg-primary-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          config.langsmith_tracing_enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <label className="text-sm font-medium text-gray-700">
+                      Enable LangSmith Tracing
+                    </label>
+                  </div>
+
+                  {config.langsmith_tracing_enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          LangSmith API Key
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showLangSmithKey ? "text" : "password"}
+                            value={config.langsmith_api_key || ''}
+                            onChange={(e) => handleConfigUpdate({ langsmith_api_key: e.target.value })}
+                            placeholder="lsv2_pt_..."
+                            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLangSmithKey(!showLangSmithKey)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            {showLangSmithKey ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          LangSmith Project Name
+                        </label>
+                        <input
+                          type="text"
+                          value={config.langsmith_project || ''}
+                          onChange={(e) => handleConfigUpdate({ langsmith_project: e.target.value })}
+                          placeholder="guard-demo"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Project name in LangSmith dashboard (created automatically if it doesn't exist)
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

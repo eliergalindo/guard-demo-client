@@ -2,6 +2,7 @@ import httpx
 from typing import List, Dict, Any, Optional
 from .database import get_db
 from .models import AppConfig
+from . import tracing
 
 LAKERA_URL = "https://api.lakera.ai/v2/guard"
 
@@ -9,6 +10,7 @@ LAKERA_URL = "https://api.lakera.ai/v2/guard"
 _last_lakera_result: Optional[Dict[str, Any]] = None
 _last_lakera_request: Optional[Dict[str, Any]] = None
 
+@tracing.trace(name="lakera.check_interaction", run_type="tool", metadata={"service": "lakera-guard"})
 async def check_interaction(
     messages: List[Dict[str, str]], 
     meta: Optional[Dict[str, Any]] = None, 

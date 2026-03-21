@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional
 import os
 from .database import get_db
 from .models import AppConfig
+from . import tracing
 
 class OpenAIClient:
     def __init__(self):
@@ -32,9 +33,10 @@ class OpenAIClient:
             "gpt-3.5-turbo"
         ]
     
+    @tracing.trace(name="openai.chat_completion", run_type="llm", metadata={"service": "openai"})
     def chat_completion(
-        self, 
-        messages: List[Dict[str, str]], 
+        self,
+        messages: List[Dict[str, str]],
         model: str = "gpt-4o",
         temperature: Any = 0.7,
         tools: Optional[List[Dict[str, Any]]] = None
